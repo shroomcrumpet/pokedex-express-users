@@ -328,19 +328,40 @@ const catchPost = (request, response) => {
     const queryString = 'INSERT INTO users_pokemon (user_id, pokemon_id) VALUES ($1, $2);';
     const values = [params.user_id, params.pokemon_id];
 
-    pool.query(queryString, values, (err, result) => {
+    const queryString2 = `SELECT pokemon_id from users_pokemon WHERE user_id = ${params.user_id}`;
 
-        if (err) {
+    pool.query(queryString2, (err2, result2) => {
 
-            console.log('query error:', err.stack);
+        if (err2) {console.log('query2 error: ', err.stack);}
 
-        } else {
+        else {
 
-            console.log('query result:', result);
+            for (i in result2.rows) {
 
-            // redirect to home page
-            response.redirect(`/users/${params.user_id}`);
+                if (parseInt(result2.rows[i].pokemon_id) === parseInt(params.pokemon_id)) {
 
+                    console.log('Already caught, blocking submit');
+
+                    return response.send('ERROR: Trainer has already captured that Pokemon! Try again.');
+
+                };
+            };
+
+
+            pool.query(queryString, values, (err, result) => {
+
+                if (err) {
+
+                    console.log('query error: ', err.stack);
+
+                } else {
+
+                    console.log('query result:', result);
+
+                    response.redirect(`/users/${params.user_id}`);
+
+                };
+            });
         };
     });
 };
