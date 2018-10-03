@@ -87,22 +87,39 @@ const getNew = (request, response) => {
 
 const getPokemon = (request, response) => {
 
-    let id = request.params['id'];
-    const queryString = 'SELECT * FROM pokemon WHERE id = ' + id + ';';
+    const queryString = `SELECT * FROM pokemon WHERE id = ${request.params.id}`;
+
+    const queryString2 = `
+        SELECT pokemon.id AS pokemonid, pokemon.name AS pokemonname, users_pokemon.user_id AS trainerid, users.name AS trainername
+
+        FROM users
+        INNER JOIN users_pokemon
+        ON (users.id = users_pokemon.user_id)
+        INNER JOIN pokemon
+        ON (users_pokemon.pokemon_id = pokemon.id)
+
+        WHERE users_pokemon.pokemon_id = ${request.params.id}`;
+
 
     pool.query(queryString, (err, result) => {
 
-        if (err) {
+        if (err) {console.error('Query error: ', err.stack);}
 
-            console.error('Query error:', err.stack);
+        else {
 
-        } else {
+            pool.query(queryString2, (err2, result2) => {
 
-            console.log('Query result:', result);
+                if (err2) {console.error('Query2 error: ', err2.stack);}
 
-            // redirect to home page
-            response.render('pokemon/pokemon', { pokemon: result.rows[0] });
+                else {
 
+                    console.log('Query result: ', result);
+                    console.log('Query2 result: ', result2)
+
+                    response.render('pokemon/pokemon', { pokemon: result.rows[0], trainers: result2.rows });
+
+                };
+            });
         };
     });
 };
@@ -278,6 +295,17 @@ const userShow = (request, response) => {
 };
 
 
+const showUser = (request, response) => {
+
+    if (Object.keys(request.query).length > 0) {
+
+        response.redirect(`/users/${request.query.id}`);
+
+    } else {
+
+        response.redirect('/');
+    };
+};
 
 
 /**
@@ -341,6 +369,7 @@ app.delete('/pokemon/:id', deletePokemon);
 
 app.get('/users/:id', userShow);
 app.get('/users/new', userNew);
+app.get('/users', showUser);
 app.post('/users', userCreate);
 
 app.get('/catch', catchNew);
