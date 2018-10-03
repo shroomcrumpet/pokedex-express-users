@@ -1,3 +1,27 @@
+
+
+CREATE TABLE IF NOT EXISTS pokemon (
+    id SERIAL PRIMARY KEY,
+    name TEXT,
+    img TEXT,
+    weight TEXT,
+    height TEXT
+);
+
+
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name TEXT
+);
+
+
+CREATE TABLE IF NOT EXISTS users_pokemon (
+	id SERIAL PRIMARY KEY,
+	user_id INTEGER,
+	pokemon_id INTEGER
+);
+
+
 INSERT INTO pokemon (name, img, weight, height)  VALUES('Bulbasaur','http://www.serebii.net/pokemongo/pokemon/001.png','6.9 kg','0.71 m');
 INSERT INTO pokemon (name, img, weight, height)  VALUES('Ivysaur','http://www.serebii.net/pokemongo/pokemon/002.png','13.0 kg','0.99 m');
 INSERT INTO pokemon (name, img, weight, height)  VALUES('Venusaur','http://www.serebii.net/pokemongo/pokemon/003.png','100.0 kg','2.01 m');
