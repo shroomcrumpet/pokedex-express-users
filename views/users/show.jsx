@@ -12,7 +12,7 @@ class UserShow extends React.Component {
 
             return (
 
-                <li>{e.pokemonname}</li>
+                <option value={e.pokemon_id}>{e.pokemonname}</option>
             );
         });
 
@@ -25,11 +25,12 @@ class UserShow extends React.Component {
 
                 <h3>Pokemon caught by {this.props.pokemon[0].trainername} ----- (Trainer ID: {this.props.pokemon[0].user_id})</h3>
 
-                <ul>
-
-                    {trainerPokemons}
-
-                </ul>
+                <form action="/pokemon">
+                    <select name="id">
+                        {trainerPokemons}
+                    </select>
+                    <input type="submit" value="Submit" />
+                </form>
 
             </div>
 

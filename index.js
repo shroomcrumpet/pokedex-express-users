@@ -108,6 +108,19 @@ const getPokemon = (request, response) => {
 };
 
 
+const showPokemon = (request, response) => {
+
+    if (Object.keys(request.query).length > 0) {
+
+        response.redirect(`/pokemon/${request.query.id}`);
+
+    } else {
+
+        response.redirect('/');
+    };
+};
+
+
 const postPokemon = (request, response) => {
 
     let params = request.body;
@@ -238,7 +251,7 @@ const userShow = (request, response) => {
     let userID = request.params['id'];
 
     const queryString = `
-        SELECT users_pokemon.user_id, users.name AS trainername, pokemon.name AS pokemonname
+        SELECT users_pokemon.user_id, users.name AS trainername, users_pokemon.pokemon_id, pokemon.name AS pokemonname
         FROM pokemon
         INNER JOIN users_pokemon
         ON (pokemon.id = users_pokemon.pokemon_id)
@@ -318,6 +331,7 @@ app.get('/pokemon/:id/edit', editPokemonForm);
 app.get('/pokemon/new', getNew);
 app.get('/pokemon/:id', getPokemon);
 app.get('/pokemon/:id/delete', deletePokemonForm);
+app.get('/pokemon', showPokemon);
 
 app.post('/pokemon', postPokemon);
 
