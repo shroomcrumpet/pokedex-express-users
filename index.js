@@ -233,6 +233,40 @@ const userCreate = (request, response) => {
 };
 
 
+const userShow = (request, response) => {
+
+    let userID = request.params['id'];
+
+    const queryString = `
+        SELECT users_pokemon.user_id, users.name AS trainername, pokemon.name AS pokemonname
+        FROM pokemon
+        INNER JOIN users_pokemon
+        ON (pokemon.id = users_pokemon.pokemon_id)
+        INNER JOIN users
+        ON (users_pokemon.user_id = users.id)
+        WHERE users_pokemon.user_id = ${userID}`;
+
+
+    pool.query(queryString, (err, result) => {
+
+        if (err) {
+
+            console.error('Query error:', err.stack);
+
+        } else {
+
+            console.log('Query result:', result);
+
+            // redirect to home page
+            response.render('users/show', { pokemon: result.rows });
+
+        };
+    });
+};
+
+
+
+
 /**
  * ===================================
  * User captures Pokemon
@@ -242,6 +276,32 @@ const userCreate = (request, response) => {
 const catchNew = (request, response) => {
 
     response.render('catch/new');
+};
+
+
+
+const catchPost = (request, response) => {
+
+    let params = request.body;
+
+    const queryString = 'INSERT INTO users_pokemon (user_id, pokemon_id) VALUES ($1, $2);';
+    const values = [params.user_id, params.pokemon_id];
+
+    pool.query(queryString, values, (err, result) => {
+
+        if (err) {
+
+            console.log('query error:', err.stack);
+
+        } else {
+
+            console.log('query result:', result);
+
+            // redirect to home page
+            response.redirect(`/users/${params.user_id}`);
+
+        };
+    });
 };
 
 
@@ -265,10 +325,12 @@ app.put('/pokemon/:id', updatePokemon);
 
 app.delete('/pokemon/:id', deletePokemon);
 
+app.get('/users/:id', userShow);
 app.get('/users/new', userNew);
 app.post('/users', userCreate);
 
 app.get('/catch', catchNew);
+app.post('/catch', catchPost);
 
 
 /**
