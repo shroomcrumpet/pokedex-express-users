@@ -10,7 +10,9 @@
 
 const express = require('express');
 const methodOverride = require('method-override');
+const cookieParser = require('cookie-parser')
 const pg = require('pg');
+const sha256 = require('js-sha256')
 
 // Initialise postgres client
 
@@ -40,6 +42,7 @@ const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
+app.use(cookieParser());
 
 
 // Set react-views to be the default view engine
@@ -55,10 +58,11 @@ app.engine('jsx', reactEngine);
  */
 
 const getRoot = (request, response) => {
-    // query database for all pokemon
 
-    // respond with HTML page displaying all pokemon
-    //
+    if (request.cookies['loggedIn'] === 'true') {
+        console.log ("Logged in!~");
+    } else console.log ("Not logged in~!");
+
     const queryString = 'SELECT * from pokemon;';
 
     pool.query(queryString, (err, result) => {
@@ -69,9 +73,8 @@ const getRoot = (request, response) => {
 
         } else {
 
-            console.log('Query result:', result);
+            // console.log('Query result:', result);
 
-            // redirect to home page
             response.render('pokemon/home', { pokemon: result.rows });
 
         };
@@ -237,11 +240,11 @@ const userNew = (request, response) => {
 };
 
 
-const userCreate = (request, response) => {
+const userPost = (request, response) => {
 
-    const queryString = 'INSERT INTO users (name) VALUES ($1)';
+    const queryString = 'INSERT INTO users (name, password) VALUES ($1, $2) returning *';
 
-    const values = [request.body.name];
+    const values = [request.body.name, sha256(request.body.password)];
 
     console.log(queryString);
 
@@ -256,8 +259,9 @@ const userCreate = (request, response) => {
 
             console.log('Query result:', result);
 
-            // redirect to home page
-            response.redirect('/');
+            response.cookie ('loggedIn', 'true');
+
+            response.redirect(`/users/${result.rows[0].id}`);
         };
     });
 };
@@ -281,21 +285,33 @@ const userShow = (request, response) => {
 
         if (err) {
 
-            console.error('Query error:', err.stack);
+            console.error('Query error: ', err.stack);
 
         } else {
 
-            console.log('Query result:', result);
+            console.log('Query result: ', result);
 
-            // redirect to home page
-            response.render('users/show', { pokemon: result.rows });
+            const queryString2 = `SELECT * FROM users WHERE id = ${userID}`;
 
+            pool.query(queryString2, (err2, result2) => {
+
+                if (err2) {console.error('Query2 error: ', err2.stack);}
+
+                else {
+
+                    console.log('Query2 result: ', result2);
+                    response.render('users/show', {
+                        pokemon: result.rows,
+                        trainer: result2.rows
+                    });
+                };
+            });
         };
     });
 };
 
 
-const showUser = (request, response) => {
+const usersShow = (request, response) => {
 
     if (Object.keys(request.query).length > 0) {
 
@@ -314,11 +330,11 @@ const showUser = (request, response) => {
  * ===================================
  */
 
+
 const catchNew = (request, response) => {
 
     response.render('catch/new');
 };
-
 
 
 const catchPost = (request, response) => {
@@ -369,12 +385,56 @@ const catchPost = (request, response) => {
 
 /**
  * ===================================
+ * Authentication
+ * ===================================
+ */
+
+
+const login = (request, response) => {
+
+    const queryString = `SELECT * FROM users WHERE name = '${request.body.name}'`;
+
+    pool.query(queryString, (err, result) => {
+
+        if (err) {console.error('Query error:', err.stack);}
+
+        else {
+
+            console.log('Query result:', result);
+
+            if (result.rows.length > 0 && result.rows[0].password === sha256(request.body.password) ) {
+
+                console.log('Login successful~!');
+                response.cookie('loggedIn', 'true');
+                response.redirect(`/users/${result.rows[0].id}`);
+
+            } else {
+
+                console.log('Login unsuccessful~!');
+                response.redirect(`/users/login`);
+
+            };
+        };
+    });
+};
+
+
+const logout = (request, response) => {
+
+    response.clearCookie('loggedIn');
+
+    response.send('You are logged out~!');
+
+};
+
+
+/**
+ * ===================================
  * Routes
  * ===================================
  */
 
 app.get('/', getRoot);
-
 
 app.get('/pokemon/:id/edit', editPokemonForm);
 app.get('/pokemon/new', getNew);
@@ -388,13 +448,16 @@ app.put('/pokemon/:id', updatePokemon);
 
 app.delete('/pokemon/:id', deletePokemon);
 
+app.get('/users/login', userNew);
 app.get('/users/:id', userShow);
-app.get('/users/new', userNew);
-app.get('/users', showUser);
-app.post('/users', userCreate);
+app.get('/users', usersShow);
+app.post('/users', userPost);
 
 app.get('/catch', catchNew);
 app.post('/catch', catchPost);
+
+app.post('/users/login', login);
+app.delete('/logout', logout);
 
 
 /**

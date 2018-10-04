@@ -23,7 +23,7 @@ class UserShow extends React.Component {
 
                 <h1>Pokemon Trainer Page</h1>
 
-                <h3>Pokemon caught by {this.props.pokemon[0].trainername} ----- (Trainer ID: {this.props.pokemon[0].user_id})</h3>
+                <h3>Pokemon caught by {this.props.trainer[0].name} ----- (Trainer ID: {this.props.trainer[0].id})</h3>
 
                 <form action="/pokemon">
                     <select name="id">
